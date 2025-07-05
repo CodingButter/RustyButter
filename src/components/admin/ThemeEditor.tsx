@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/hooks/useTheme'
 
 interface Theme {
   id: number
@@ -12,15 +13,19 @@ interface Theme {
 
 export function ThemeEditor() {
   const { token, user } = useAuth()
+  const { theme: currentTheme } = useTheme()
   const [themes, setThemes] = useState<Theme[]>([])
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [previewTheme, setPreviewTheme] = useState<string | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const originalThemeRef = useRef<Theme | null>(null)
+  const originalCssVarsRef = useRef<Record<string, string>>({})
+  const isLivePreviewingRef = useRef(false)
   
-  console.log('ThemeEditor: Current user:', user)
-  console.log('ThemeEditor: Has token:', !!token)
+  // Authentication state tracked internally
 
   const fetchThemes = useCallback(async () => {
     try {
@@ -34,12 +39,10 @@ export function ThemeEditor() {
         const data = await response.json()
         setThemes(data.themes)
       } else {
-        console.error('Failed to fetch themes:', response.status, response.statusText)
-        const errorText = await response.text()
-        console.error('Error details:', errorText)
+        // Failed to fetch themes - response not ok
       }
     } catch (error) {
-      console.error('Error fetching themes:', error)
+      // Error fetching themes - silent error handling
     } finally {
       setLoading(false)
     }
@@ -48,6 +51,58 @@ export function ThemeEditor() {
   useEffect(() => {
     fetchThemes()
   }, [fetchThemes])
+
+  // Store original CSS variables when starting to edit
+  useEffect(() => {
+    if (selectedTheme && editMode) {
+      originalThemeRef.current = { ...selectedTheme }
+      // If editing the current theme, mark for live preview
+      if (selectedTheme.slug === currentTheme) {
+        originalCssVarsRef.current = { ...selectedTheme.css_variables }
+        isLivePreviewingRef.current = true
+      }
+    }
+    
+    return () => {
+      // Cleanup preview on unmount
+      isLivePreviewingRef.current = false
+    }
+  }, [selectedTheme, editMode, currentTheme])
+
+  // Apply live preview when editing current theme
+  useEffect(() => {
+    if (selectedTheme && editMode && selectedTheme.slug === currentTheme) {
+      // Remove existing theme style tag if any
+      const existingStyle = document.getElementById('theme-variables-preview')
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+
+      // Create new style tag with CSS variables for preview
+      const style = document.createElement('style')
+      style.id = 'theme-variables-preview'
+      style.innerHTML = `:root {
+${Object.entries(selectedTheme.css_variables || {})
+  .map(([key, value]) => `  ${key}: ${value};`)
+  .join('\n')}
+}`
+      document.head.appendChild(style)
+    } else {
+      // Remove preview style when not editing current theme
+      const previewStyle = document.getElementById('theme-variables-preview')
+      if (previewStyle) {
+        previewStyle.remove()
+      }
+    }
+
+    return () => {
+      // Cleanup preview style on unmount
+      const previewStyle = document.getElementById('theme-variables-preview')
+      if (previewStyle) {
+        previewStyle.remove()
+      }
+    }
+  }, [selectedTheme, editMode, currentTheme])
 
   const handleSaveTheme = async () => {
     if (!selectedTheme) return
@@ -71,9 +126,12 @@ export function ThemeEditor() {
         await fetchThemes()
         setSelectedTheme(null)
         setEditMode(false)
+        setHasUnsavedChanges(false)
+        // If we were live previewing, the changes are now saved
+        isLivePreviewingRef.current = false
       }
     } catch (error) {
-      console.error('Failed to save theme:', error)
+      // Failed to save theme - silent error handling
     } finally {
       setSaving(false)
     }
@@ -94,7 +152,7 @@ export function ThemeEditor() {
         await fetchThemes()
       }
     } catch (error) {
-      console.error('Failed to delete theme:', error)
+      // Failed to delete theme - silent error handling
     }
   }
 
@@ -108,6 +166,11 @@ export function ThemeEditor() {
         [variable]: value
       }
     })
+    
+    // Mark as having unsaved changes
+    if (!hasUnsavedChanges) {
+      setHasUnsavedChanges(true)
+    }
   }
 
   const applyPreview = (theme: Theme) => {
@@ -145,15 +208,29 @@ export function ThemeEditor() {
         <h1 className="text-3xl font-bold text-heading">Theme Editor</h1>
         <button
           onClick={() => {
+            // Remove preview style before creating new theme
+            const previewStyle = document.getElementById('theme-variables-preview')
+            if (previewStyle) {
+              previewStyle.remove()
+            }
             setSelectedTheme({
               id: 0,
               name: '',
               slug: '',
               description: '',
-              css_variables: {},
+              css_variables: {
+                '--color-bg-primary': '#fae8c0',
+                '--color-bg-secondary': '#e2cab7',
+                '--color-accent-primary': '#679a4b',
+                '--color-accent-secondary': '#8fc370',
+                '--color-text-base': '#2a1f0a',
+                '--color-button-bg': '#679a4b',
+                '--color-button-hover': '#4a7c2e'
+              },
               is_active: true
             })
             setEditMode(false)
+            setHasUnsavedChanges(false)
           }}
           className="px-6 py-2 bg-accent-primary hover:bg-accent-primary/90 text-white font-bold rounded-lg transition-colors"
         >
@@ -182,8 +259,14 @@ export function ThemeEditor() {
                         : 'bg-black/20 border-white/10 hover:border-accent-primary/50'
                     }`}
                     onClick={() => {
+                      // Remove preview style when switching themes
+                      const previewStyle = document.getElementById('theme-variables-preview')
+                      if (previewStyle) {
+                        previewStyle.remove()
+                      }
                       setSelectedTheme(theme)
                       setEditMode(true)
+                      setHasUnsavedChanges(false)
                     }}
                   >
                     <div className="flex items-center justify-between">
@@ -194,6 +277,9 @@ export function ThemeEditor() {
                       <div className="flex items-center gap-2 ml-2 flex-shrink-0">
                         {theme.is_active && (
                           <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded whitespace-nowrap">Active</span>
+                        )}
+                        {selectedTheme?.id === theme.id && hasUnsavedChanges && (
+                          <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded whitespace-nowrap">Unsaved</span>
                         )}
                         {previewTheme === theme.slug ? (
                           <button
@@ -232,10 +318,15 @@ export function ThemeEditor() {
           <div className="lg:col-span-2 h-full overflow-hidden">
             <div className="bg-surface-card/10 backdrop-blur-sm rounded-xl border border-white/10 h-full flex flex-col overflow-hidden">
               {/* Header */}
-              <div className="p-6 border-b border-white/10">
+              <div className="p-6 border-b border-white/10 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-heading">
                   {editMode ? 'Edit Theme' : 'Create New Theme'}
                 </h2>
+                {selectedTheme.slug === currentTheme && editMode && (
+                  <span className="text-sm text-blue-400">
+                    Live preview enabled - changes appear instantly
+                  </span>
+                )}
               </div>
 
               {/* Scrollable Content */}
@@ -248,7 +339,10 @@ export function ThemeEditor() {
                     <input
                       type="text"
                       value={selectedTheme.name}
-                      onChange={(e) => setSelectedTheme({ ...selectedTheme, name: e.target.value })}
+                      onChange={(e) => {
+                        setSelectedTheme({ ...selectedTheme, name: e.target.value })
+                        if (!hasUnsavedChanges) setHasUnsavedChanges(true)
+                      }}
                       className="w-full px-4 py-2 bg-surface-card/20 border border-white/20 rounded-lg text-body focus:outline-none focus:border-accent-primary"
                     />
                   </div>
@@ -257,7 +351,10 @@ export function ThemeEditor() {
                     <input
                       type="text"
                       value={selectedTheme.slug}
-                      onChange={(e) => setSelectedTheme({ ...selectedTheme, slug: e.target.value })}
+                      onChange={(e) => {
+                        setSelectedTheme({ ...selectedTheme, slug: e.target.value })
+                        if (!hasUnsavedChanges) setHasUnsavedChanges(true)
+                      }}
                       className="w-full px-4 py-2 bg-surface-card/20 border border-white/20 rounded-lg text-body focus:outline-none focus:border-accent-primary"
                     />
                   </div>
@@ -267,7 +364,10 @@ export function ThemeEditor() {
                   <label className="block text-sm font-medium text-heading mb-2">Description</label>
                   <textarea
                     value={selectedTheme.description}
-                    onChange={(e) => setSelectedTheme({ ...selectedTheme, description: e.target.value })}
+                    onChange={(e) => {
+                      setSelectedTheme({ ...selectedTheme, description: e.target.value })
+                      if (!hasUnsavedChanges) setHasUnsavedChanges(true)
+                    }}
                     rows={3}
                     className="w-full px-4 py-2 bg-surface-card/20 border border-white/20 rounded-lg text-body focus:outline-none focus:border-accent-primary"
                   />
@@ -322,8 +422,14 @@ export function ThemeEditor() {
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => {
+                        // Remove preview style when canceling
+                        const previewStyle = document.getElementById('theme-variables-preview')
+                        if (previewStyle) {
+                          previewStyle.remove()
+                        }
                         setSelectedTheme(null)
                         setEditMode(false)
+                        setHasUnsavedChanges(false)
                       }}
                       className="px-6 py-2 text-body hover:text-accent-primary transition-colors"
                     >

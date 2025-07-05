@@ -111,7 +111,7 @@ export function AccountSettingsModal({ isOpen, onClose }: AccountSettingsModalPr
         setError(data.error || 'Failed to update profile')
       }
     } catch (error) {
-      console.error('Profile update error:', error)
+      // Profile update error - silent error handling
       setError('Network error occurred')
     }
     
@@ -152,7 +152,7 @@ export function AccountSettingsModal({ isOpen, onClose }: AccountSettingsModalPr
         setError(data.error || 'Failed to change password')
       }
     } catch (error) {
-      console.error('Password change error:', error)
+      // Password change error - silent error handling
       setError('Network error occurred')
     }
     

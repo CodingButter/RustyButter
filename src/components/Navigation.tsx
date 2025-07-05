@@ -10,6 +10,7 @@ import { useModal } from '@/hooks/useModal'
 export const Navigation: React.FC = () => {
   const [activeSection, setActiveSection] = useState('home')
   const [isDarkBackground, setIsDarkBackground] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { getCartItemCount, toggleCart } = useShop()
   const { user, isAuthenticated, logout } = useAuth()
@@ -68,17 +69,16 @@ export const Navigation: React.FC = () => {
       // Determine if background is dark based on what's directly behind the nav
       const currentScrollY = window.scrollY
       
+      // Track if we've scrolled
+      setIsScrolled(currentScrollY > 10)
+      
       // Check which section the nav is currently over
       let isDark = false
       
-      // At the very top (scroll position 0-100), use dark text on light nav background
-      if (currentScrollY <= 100) {
-        isDark = false
-      }
-      // Hero section middle/bottom (dark background behind nav)
-      else {
+      // When scrolled, check what's behind the nav
+      if (currentScrollY > 10) {
         const heroSection = document.getElementById('home')
-        if (heroSection && currentScrollY > 100 && currentScrollY < heroSection.offsetHeight) {
+        if (heroSection && currentScrollY < heroSection.offsetHeight) {
           isDark = true
         }
       }
@@ -141,9 +141,11 @@ export const Navigation: React.FC = () => {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b shadow-sm"
+    <nav className={`fixed top-0 left-0 right-0 z-50 border-b shadow-sm transition-all duration-300 ${
+      isScrolled ? 'backdrop-blur-md' : ''
+    }`}
          style={{ 
-           background: 'var(--color-overlay)',
+           background: isScrolled ? 'var(--color-overlay)' : 'var(--color-bg-primary)',
            borderColor: 'var(--color-border-muted)',
            boxShadow: '0 2px 20px var(--color-shadow)'
          }}>
@@ -169,7 +171,7 @@ export const Navigation: React.FC = () => {
                     style={{
                       color: activeSection === item.id 
                         ? 'var(--color-accent-primary)' 
-                        : isDarkBackground ? '#ffffff' : 'var(--color-text-body)',
+                        : !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)'),
                       background: activeSection === item.id ? 'var(--color-overlay)' : 'transparent'
                     }}
                     onMouseEnter={(e) => {
@@ -180,7 +182,7 @@ export const Navigation: React.FC = () => {
                     }}
                     onMouseLeave={(e) => {
                       if (activeSection !== item.id) {
-                        e.currentTarget.style.color = isDarkBackground ? '#ffffff' : 'var(--color-text-body)'
+                        e.currentTarget.style.color = !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
                         e.currentTarget.style.background = 'transparent'
                       }
                     }}
@@ -204,7 +206,10 @@ export const Navigation: React.FC = () => {
                 }}
               >
                 <svg 
-                  className={`w-6 h-6 ${isDarkBackground ? 'text-white' : 'text-gray-700'} hover:text-accent-primary transition-colors`}
+                  className="w-6 h-6 hover:text-accent-primary transition-colors"
+                  style={{
+                    color: !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
+                  }}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -228,7 +233,7 @@ export const Navigation: React.FC = () => {
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all hover:scale-105`}
                     style={{
-                      color: isDarkBackground ? '#ffffff' : 'var(--color-text-body)'
+                      color: !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'var(--color-overlay)'
@@ -236,7 +241,7 @@ export const Navigation: React.FC = () => {
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.color = isDarkBackground ? '#ffffff' : 'var(--color-text-body)'
+                      e.currentTarget.style.color = !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
                     }}
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -362,14 +367,14 @@ export const Navigation: React.FC = () => {
                     }}
                     className="px-3 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105"
                     style={{
-                      color: isDarkBackground ? '#ffffff' : 'var(--color-text-body)'
+                      color: !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = 'var(--color-accent-primary)'
                       e.currentTarget.style.background = 'var(--color-overlay)'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = isDarkBackground ? '#ffffff' : 'var(--color-text-body)'
+                      e.currentTarget.style.color = !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
                       e.currentTarget.style.background = 'transparent'
                     }}
                   >
@@ -407,7 +412,11 @@ export const Navigation: React.FC = () => {
             </div>
           </div>
           <div className="md:hidden">
-            <button className={`${isDarkBackground ? 'text-white' : 'text-gray-700'} hover:text-accent-primary inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-primary`}>
+            <button 
+              className="hover:text-accent-primary inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-primary"
+              style={{
+                color: !isScrolled ? 'var(--color-text-base)' : (isDarkBackground ? '#ffffff' : 'var(--color-text-body)')
+              }}>
               <span className="sr-only">Open main menu</span>
               <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

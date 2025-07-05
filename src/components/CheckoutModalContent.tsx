@@ -41,7 +41,7 @@ export function CheckoutModalContent({ onClose }: CheckoutModalContentProps) {
         alert(error.error || 'Payment failed. Please try again.')
       }
     } catch (error) {
-      console.error('Checkout error:', error)
+      // Checkout error - silent error handling
       alert('Payment failed. Please check your connection and try again.')
     }
     

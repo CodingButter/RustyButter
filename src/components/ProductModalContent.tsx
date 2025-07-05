@@ -20,22 +20,21 @@ function ImageGallery({ images, productName }: ImageGalleryProps) {
   return (
     <div className="space-y-4">
       <div className="relative aspect-square rounded-xl overflow-hidden bg-surface-card/20">
-        {images[currentImage] ? (
-          <img
-            src={images[currentImage]}
-            alt={productName}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              const fallback = target.nextElementSibling as HTMLElement
-              if (fallback) fallback.style.display = 'flex'
-            }}
-          />
-        ) : null}
+        <img
+          key={currentImage}
+          src={images[currentImage]}
+          alt={productName}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement
+            target.style.display = 'none'
+            const fallback = target.nextElementSibling as HTMLElement
+            if (fallback) fallback.style.display = 'flex'
+          }}
+        />
         <div 
           className="absolute inset-0 flex items-center justify-center text-6xl font-bold text-gray-400 bg-gray-800"
-          style={{ display: images[currentImage] ? 'none' : 'flex' }}
+          style={{ display: 'none' }}
         >
           {productName.charAt(0).toUpperCase()}
         </div>
@@ -53,22 +52,20 @@ function ImageGallery({ images, productName }: ImageGalleryProps) {
               }`}
             >
               <div className="relative w-full h-full bg-gray-800">
-                {image ? (
-                  <img
-                    src={image}
-                    alt={`${productName} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      const fallback = target.nextElementSibling as HTMLElement
-                      if (fallback) fallback.style.display = 'flex'
-                    }}
-                  />
-                ) : null}
+                <img
+                  src={image}
+                  alt={`${productName} ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                    const fallback = target.nextElementSibling as HTMLElement
+                    if (fallback) fallback.style.display = 'flex'
+                  }}
+                />
                 <div 
                   className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-400 bg-gray-800"
-                  style={{ display: image ? 'none' : 'flex' }}
+                  style={{ display: 'none' }}
                 >
                   {index + 1}
                 </div>

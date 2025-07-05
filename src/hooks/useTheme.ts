@@ -2,9 +2,9 @@ import { createContext, useContext } from 'react'
 import type { ThemeContextType } from '@/types'
 
 export const ThemeContext = createContext<ThemeContextType>({
-  theme: 'organic-light',
+  theme: '',
   setTheme: () => {},
-  getThemes: () => ['organic', 'organic-light', 'organic-dark', 'cyberpunk', 'electric', 'synthwave', 'forest-dark', 'ocean', 'sunset', 'material'],
+  getThemes: () => [],
 })
 
 export const useTheme = () => {

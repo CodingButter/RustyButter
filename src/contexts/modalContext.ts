@@ -1,5 +1,4 @@
-import { createContext } from 'react'
-import type { ReactNode } from 'react'
+import { createContext, type ReactNode } from 'react'
 
 export interface ModalConfig {
   id: string

@@ -63,7 +63,7 @@ export function ServerConfig() {
         alert('Configuration saved successfully!')
       }
     } catch (error) {
-      console.error('Failed to save config:', error)
+      // Failed to save config - silent error handling
       alert('Failed to save configuration')
     } finally {
       setSaving(false)

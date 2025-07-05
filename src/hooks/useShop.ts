@@ -226,7 +226,7 @@ export function useShopState(): ShopContextType {
           })
         }
       } catch (error) {
-        console.error('Failed to sync cart with server:', error)
+        // Failed to sync cart with server - silent error handling
       }
     }
   }
@@ -257,7 +257,7 @@ export function useShopState(): ShopContextType {
           }
         })
       } catch (error) {
-        console.error('Failed to remove item from server cart:', error)
+        // Failed to remove item from server cart - silent error handling
       }
     }
   }
@@ -312,7 +312,7 @@ export function useShopState(): ShopContextType {
         )
         await Promise.all(promises)
       } catch (error) {
-        console.error('Failed to clear server cart:', error)
+        // Failed to clear server cart - silent error handling
       }
     }
   }

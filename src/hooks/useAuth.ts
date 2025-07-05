@@ -84,7 +84,7 @@ export function useAuthState(): AuthContextType {
         }))
       }
     } catch (error) {
-      console.error('Auth error:', error)
+      // Silent auth error handling
       setState(prev => ({ ...prev, isLoading: false }))
     }
   }
@@ -114,7 +114,7 @@ export function useAuthState(): AuthContextType {
         return { success: false, message: data.error || 'Login failed' }
       }
     } catch (error) {
-      console.error('Login error:', error)
+      // Silent login error handling
       return { success: false, message: 'Network error occurred' }
     }
   }
@@ -144,7 +144,7 @@ export function useAuthState(): AuthContextType {
         return { success: false, message: data.error || 'Registration failed' }
       }
     } catch (error) {
-      console.error('Registration error:', error)
+      // Silent registration error handling
       return { success: false, message: 'Network error occurred' }
     }
   }
